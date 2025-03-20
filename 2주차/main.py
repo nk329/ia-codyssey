@@ -19,9 +19,9 @@ def read_csv(file_path):
             """
 
 
-            name, substance,weight,gravity,flammability = parts
+            substance,weight,specific,strength,flammability = parts
             try:
-                inventory.append([name, substance,weight,gravity,flammability])  # 숫자로 변환
+                inventory.append([substance,weight,specific,strength,flammability])  # 숫자로 변환
             except ValueError:
                 print(f'⚠️ 경고: 인화성 지수가 숫자가 아님 - {flammability} (무시됨)')
         return inventory
