@@ -22,7 +22,7 @@ class DummySensor:
     def random_date(self, start_year, end_year):
         year = random.randint(start_year, end_year)
         month = random.randint(1, 12)
-        day = random.randint(1, 28)  # 단순화를 위해 28일로 제한 (2월을 포함한 모든 월을 처리)
+        day = random.randint(1, 28) 
         return f"{year}-{month:02d}-{day:02d}"
 
     def random_time(self):
