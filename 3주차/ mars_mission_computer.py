@@ -32,8 +32,8 @@ class DummySensor:
         return f"{hour:02d}:{minute:02d}:{second:02d}"
     
     def get_env(self):
-        random_generated_date = self.random_date(2020, 2025)  # self를 사용하여 호출
-        random_generated_time = self.random_time()  # self를 사용하여 호출
+        random_generated_date = self.random_date(2020, 2025)  
+        random_generated_time = self.random_time()  
         current_time = f"{random_generated_date} {random_generated_time}"
         log_entry = f"{current_time}, {self.env_values['mars_base_internal_temperature']}, " \
                     f"{self.env_values['mars_base_external_temperature']}, {self.env_values['mars_base_internal_humidity']}, " \
