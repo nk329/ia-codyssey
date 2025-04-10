@@ -5,6 +5,7 @@ import msvcrt
 import platform
 import os
 
+
 class DummySensor:
     def __init__(self):
         self.env_values = {
@@ -15,7 +16,7 @@ class DummySensor:
             'mars_base_internal_co2': 0.0,
             'mars_base_internal_oxygen': 0.0
         }
-    
+
     def set_env(self):
         self.env_values['mars_base_internal_temperature'] = random.randint(18, 30)
         self.env_values['mars_base_external_temperature'] = random.randint(0, 21)
@@ -27,7 +28,7 @@ class DummySensor:
     def random_date(self, start_year, end_year):
         year = random.randint(start_year, end_year)
         month = random.randint(1, 12)
-        day = random.randint(1, 28) 
+        day = random.randint(1, 28)
         return f'{year}-{month:02d}-{day:02d}'
 
     def random_time(self):
@@ -35,7 +36,7 @@ class DummySensor:
         minute = random.randint(0, 59)
         second = random.randint(0, 59)
         return f'{hour:02d}:{minute:02d}:{second:02d}'
-    
+
     def get_env(self):
         random_generated_date = self.random_date(2020, 2025)
         random_generated_time = self.random_time()
@@ -44,10 +45,10 @@ class DummySensor:
                     f'{self.env_values["mars_base_external_temperature"]}, {self.env_values["mars_base_internal_humidity"]}, ' \
                     f'{self.env_values["mars_base_external_illuminance"]}, {self.env_values["mars_base_internal_co2"]}, ' \
                     f'{self.env_values["mars_base_internal_oxygen"]}\n'
-        
+
         with open('sensor_log.txt', 'a') as log_file:
             log_file.write(log_entry)
-        
+
         return self.env_values
 
 
@@ -64,6 +65,22 @@ class MissionComputer:
         self.ds = DummySensor()
         self.readings = []
         self.start_time = time.time()
+        self.settings = self.load_settings()
+
+    def load_settings(self):
+        settings = {
+            'system_info': ['os', 'os_version', 'cpu_type', 'cpu_count', 'memory'],
+            'load_info': ['cpu_usage', 'memory_usage']
+        }
+        try:
+            if os.path.exists('setting.txt'):
+                with open('setting.txt', 'r') as file:
+                    content = file.read()
+                    custom_settings = json.loads(content)
+                    settings.update(custom_settings)
+        except Exception as e:
+            print('설정 파일을 읽는 중 오류 발생:', e)
+        return settings
 
     def get_sensor_data(self):
         while True:
@@ -71,7 +88,6 @@ class MissionComputer:
                 key = msvcrt.getch()
                 if key == b'q':
                     print('System stopped...')
-                    # q 누르면 시스템 정보 출력
                     self.get_mission_computer_info()
                     self.get_mission_computer_load()
                     break
@@ -99,24 +115,28 @@ class MissionComputer:
 
     def get_mission_computer_info(self):
         try:
-            system_info = {
-                'Operating System': platform.system(),
-                'Operating System Version': platform.version(),
-                'CPU Type': platform.processor(),
-                'CPU Cores': os.cpu_count()
-            }
-            if platform.system() == 'Windows':
-                mem_info = os.popen('systeminfo').read()
-                for line in mem_info.split('\n'):
-                    if 'Total Physical Memory' in line:
-                        memory = line.split(':')[1].strip()
+            system_info = {}
+            if 'os' in self.settings['system_info']:
+                system_info['Operating System'] = platform.system()
+            if 'os_version' in self.settings['system_info']:
+                system_info['Operating System Version'] = platform.version()
+            if 'cpu_type' in self.settings['system_info']:
+                system_info['CPU Type'] = platform.processor()
+            if 'cpu_count' in self.settings['system_info']:
+                system_info['CPU Cores'] = os.cpu_count()
+            if 'memory' in self.settings['system_info']:
+                if platform.system() == 'Windows':
+                    mem_info = os.popen('systeminfo').read()
+                    for line in mem_info.split('\n'):
+                        if 'Total Physical Memory' in line:
+                            memory = line.split(':')[1].strip()
+                            system_info['Memory'] = memory
+                            break
+                else:
+                    mem_info = os.popen('free -h').readlines()
+                    if len(mem_info) >= 2:
+                        memory = mem_info[1].split()[1]
                         system_info['Memory'] = memory
-                        break
-            else:
-                mem_info = os.popen('free -h').readlines()
-                if len(mem_info) >= 2:
-                    memory = mem_info[1].split()[1]
-                    system_info['Memory'] = memory
             print('=== Mission Computer Info ===')
             print(json.dumps(system_info, indent=4, ensure_ascii=False))
         except Exception as e:
@@ -125,33 +145,37 @@ class MissionComputer:
     def get_mission_computer_load(self):
         try:
             load_info = {}
-            if platform.system() == 'Windows':
-                cpu_load = os.popen('wmic cpu get loadpercentage').read()
-                cpu_load_lines = cpu_load.strip().split('\n')
-                if len(cpu_load_lines) >= 2:
-                    cpu_usage = cpu_load_lines[1].strip()
-                    load_info['CPU Usage (%)'] = cpu_usage
-                mem_info = os.popen('wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /Value').read()
-                mem_lines = mem_info.strip().split('\n')
-                mem_data = {}
-                for line in mem_lines:
-                    if '=' in line:
-                        key, value = line.split('=')
-                        mem_data[key.strip()] = int(value.strip())
-                total = mem_data.get('TotalVisibleMemorySize', 0)
-                free = mem_data.get('FreePhysicalMemory', 0)
-                if total > 0:
-                    usage = (total - free) / total * 100
-                    load_info['Memory Usage (%)'] = round(usage, 2)
-            else:
-                load_avg = os.getloadavg()
-                load_info['CPU Usage (1min avg)'] = load_avg[0]
-                mem_info = os.popen('free').readlines()
-                if len(mem_info) >= 2:
-                    total = int(mem_info[1].split()[1])
-                    used = int(mem_info[1].split()[2])
-                    usage = used / total * 100
-                    load_info['Memory Usage (%)'] = round(usage, 2)
+            if 'cpu_usage' in self.settings['load_info']:
+                if platform.system() == 'Windows':
+                    cpu_load = os.popen('wmic cpu get loadpercentage').read()
+                    cpu_load_lines = cpu_load.strip().split('\n')
+                    if len(cpu_load_lines) >= 2:
+                        cpu_usage = cpu_load_lines[1].strip()
+                        load_info['CPU Usage (%)'] = cpu_usage
+                else:
+                    load_avg = os.getloadavg()
+                    load_info['CPU Usage (1min avg)'] = load_avg[0]
+            if 'memory_usage' in self.settings['load_info']:
+                if platform.system() == 'Windows':
+                    mem_info = os.popen('wmic OS get FreePhysicalMemory,TotalVisibleMemorySize /Value').read()
+                    mem_lines = mem_info.strip().split('\n')
+                    mem_data = {}
+                    for line in mem_lines:
+                        if '=' in line:
+                            key, value = line.split('=')
+                            mem_data[key.strip()] = int(value.strip())
+                    total = mem_data.get('TotalVisibleMemorySize', 0)
+                    free = mem_data.get('FreePhysicalMemory', 0)
+                    if total > 0:
+                        usage = (total - free) / total * 100
+                        load_info['Memory Usage (%)'] = round(usage, 2)
+                else:
+                    mem_info = os.popen('free').readlines()
+                    if len(mem_info) >= 2:
+                        total = int(mem_info[1].split()[1])
+                        used = int(mem_info[1].split()[2])
+                        usage = used / total * 100
+                        load_info['Memory Usage (%)'] = round(usage, 2)
             print('=== Mission Computer Load ===')
             print(json.dumps(load_info, indent=4, ensure_ascii=False))
         except Exception as e:
