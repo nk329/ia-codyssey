@@ -9,7 +9,7 @@ from PyQt5.QtCore import Qt
 class Calculator(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('Mars Calculator')
+        self.setWindowTitle('JNK Calculator')
         self.setFixedSize(320, 480)
         self.init_ui()
 
