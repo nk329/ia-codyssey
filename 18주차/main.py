@@ -4,8 +4,8 @@ import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-SENDER_EMAIL = 'nknara0329@naver.com'
-SENDER_PASSWORD = 'LXT8REHB697U'
+SENDER_EMAIL = '실제 네이버 아이디 입력'
+SENDER_PASSWORD = '앱 비밀번호 12자리 입력'
 
 # naver SMTP 서버 정보
 SMTP_SERVER = 'smtp.naver.com'
