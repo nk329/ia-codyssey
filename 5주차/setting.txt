@@ -1,4 +1,0 @@
-{
-    "system_info": ["os", "cpu_count", "memory"],
-    "load_info": ["cpu_usage"]
-}
